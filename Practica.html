@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSAW</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+        }
+        #gameArea {
+            text-align: center;
+        }
+        #progressBar {
+            width: 50%;
+            height: 20px;
+            background-color: red;
+            transition: width 0.2s;
+            margin: 10px auto;
+        }
+        #keyDisplay {
+            font-size: 50px;
+            margin: 20px;
+            padding: 20px;
+            border: 3px solid black;
+            display: inline-block;
+            min-width: 50px;
+        }
+        .correct {
+            background-color: rgb(131, 255, 131);
+            color: white;
+        }
+        .incorrect {
+            background-color: rgb(255, 80, 80);
+            color: white;
+        }
+        #startButton {
+            font-size: 20px;
+            padding: 10px 20px;
+            background-color: rgb(83, 83, 255);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #startButton:hover {
+            background-color: darkblue;
+        }
+        #scoreBoard {
+            width: 200px;
+            height: 300px;
+            border: 2px solid black;
+            padding: 10px;
+            text-align: left;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Press the correct key</h1>
+    <button id="startButton">PLAY</button>
+    <div id="countdown" style="font-size: 30px; margin-top: 20px;"></div>
+    
+    <div id="container" style="display:none;">
+        <div id="gameArea">
+            <div id="progressBar"></div>
+            <p id="keyDisplay"></p>
+            <p>Score: <span id="score">0</span></p>
+        </div>
+        <div id="scoreBoard">
+            <h3>Score History</h3>
+            <ul id="scoreList"></ul>
+        </div>
+    </div>
+
+    <script>
+        /* ESP: Este array contiene las teclas permitidas en el juego. 
+        EN: This array contains the keys allowed in the game.*/
+        const keys = ['F', 'G', 'E', 'R', 'T'];
+        let currentKey = '';
+        let lastKey = '';
+        let score = 0;
+        let progress = 100;
+        let gameActive = false;
+        let timer;
+
+        const startButton = document.getElementById('startButton');
+        const container = document.getElementById('container');
+        const progressBar = document.getElementById('progressBar');
+        const keyDisplay = document.getElementById('keyDisplay');
+        const scoreDisplay = document.getElementById('score');
+        const countdownDisplay = document.getElementById('countdown');
+        const scoreList = document.getElementById('scoreList');
+
+        /*ESP: Esta función genera una tecla aleatoria, asegurándose de que no se repita la misma tecla consecutivamente.
+        EN: This function generates a random key, ensuring that the same key is not repeated consecutively.*/
+        function getRandomKey() {
+            let newKey;
+            do {
+                newKey = keys[Math.floor(Math.random() * keys.length)];
+            } while (newKey === lastKey);
+            lastKey = newKey;
+            return newKey;
+        }
+
+        /* ESP: Función que inicia la cuenta regresiva antes de comenzar el juego.
+        EN: Function that starts the countdown before starting the game.*/
+        function startGame() {
+            startButton.style.display = 'none';
+            countdownDisplay.textContent = "Are you ready?";
+            let count = 3;
+            
+            const countdown = setInterval(() => {
+                countdownDisplay.textContent = count;
+                count--;
+                if (count < 0) {
+                    clearInterval(countdown);
+                    countdownDisplay.textContent = "Begin!";
+                    setTimeout(() => { countdownDisplay.textContent = ""; }, 1000);
+                    beginGame();
+                }
+            }, 1000);
+        }
+
+        /* ESP: Función que inicializa el juego, resetea los valores y comienza la lógica de juego.
+        EN: Function that initializes the game, resets the values ​​and starts the game logic.*/
+        function beginGame() {
+            score = 0;
+            progress = 100;
+            gameActive = true;
+            container.style.display = 'flex';
+            scoreDisplay.textContent = score;
+            newRound();
+            timer = setInterval(updateProgress, 100);
+        }
+
+        function newRound() {
+            keyDisplay.className = '';
+            currentKey = getRandomKey();
+            keyDisplay.textContent = currentKey;
+        }
+
+        /*Esta función reduce progresivamente la barra de progreso hasta que llegue a cero.*/
+        /*This function progressively reduces the progress bar until it reaches zero.*/
+        function updateProgress() {
+            progress -= 12; /*Reduccion de progreso de barra %12 x segundo*/
+            progressBar.style.width = progress + '%';
+            if (progress <= 0) {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            clearInterval(timer);
+            gameActive = false;
+            const listItem = document.createElement('li');
+            listItem.textContent = `Score: ${score}`;
+            scoreList.appendChild(listItem);
+            startButton.style.display = 'block';
+        }
+
+        /*Escucha eventos del teclado y verifica si la tecla presionada es correcta o incorrecta.*/
+        /*Listen to keyboard events and check if the key pressed is correct or incorrect.*/
+        document.addEventListener('keydown', (event) => {
+            if (!gameActive) return;
+            if (event.key.toUpperCase() === currentKey) {
+                keyDisplay.className = 'correct';
+                progress = Math.min(progress + 50, 100); /*Teclado correcto sube a 50%*/ /*Correct keyboard goes up to 50%*/
+                score++;
+                scoreDisplay.textContent = score;
+                setTimeout(newRound, 200);
+            } else {
+                keyDisplay.className = 'incorrect';
+                progress = Math.max(progress - 60, 0); /*Teclado incorrecto baja a 60*/ /*Bad keyboard drops to 60%*/
+            }
+            progressBar.style.width = progress + '%';
+        });
+
+        startButton.addEventListener('click', startGame);
+    </script>
+</body>
+</html>
